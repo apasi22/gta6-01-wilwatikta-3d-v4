@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WILWATIKTA 3D — Open-World Crime in a Javanese Sunset City</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0912; font-family: 'Segoe UI', Arial, sans-serif; color: #fff; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .panel { position: fixed; background: rgba(12, 10, 24, 0.74); border: 1px solid rgba(255, 215, 94, 0.22); border-radius: 10px; padding: 10px 14px; z-index: 5; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+  #district-panel { top: 14px; left: 14px; min-width: 190px; }
+  #district-name { font-size: 21px; font-weight: 800; letter-spacing: 1px; }
+  #district-sub { font-size: 12px; color: #ffd75e; }
+  #clock { font-size: 12px; color: #cfc8e0; margin-top: 2px; }
+  #mission-panel { top: 14px; left: 50%; transform: translateX(-50%); text-align: center; min-width: 340px; }
+  #mission-title { font-size: 15px; font-weight: 800; color: #ffd75e; letter-spacing: 0.5px; }
+  #mission-brief { font-size: 13px; color: #fff; }
+  #mission-meta { font-size: 14px; font-weight: 700; margin-top: 2px; }
+  #mission-meta span { margin: 0 8px; }
+  #status-panel { top: 14px; right: 14px; text-align: right; min-width: 170px; }
+  #cash { font-size: 24px; font-weight: 800; color: #7ddb8a; }
+  #stars { font-size: 17px; letter-spacing: 2px; }
+  #wanted-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+  .bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.18); margin-top: 5px; overflow: hidden; }
+  .bar > div { height: 100%; border-radius: 4px; }
+  #hp-bar { background: #4ed06a; width: 100%; }
+  #armor-bar { background: #4d8dff; width: 0%; }
+  #rep-line { font-size: 11px; color: #ffd75e; font-weight: 700; margin-top: 5px; letter-spacing: 0.5px; }
+  #dialogue { bottom: 118px; left: 50%; transform: translateX(-50%); width: 560px; max-width: 60vw; display: none; }
+  #dialogue-who { font-size: 13px; font-weight: 800; color: #ffd75e; }
+  #dialogue-line { font-size: 15px; }
+  #dispatch { position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%); font-size: 13px; background: rgba(12,10,24,0.6); padding: 4px 14px; border-radius: 12px; z-index: 5; }
+  #dispatch b { color: #ffd75e; }
+  #radio { bottom: 162px; right: 16px; display: flex; align-items: center; gap: 10px; padding: 7px 12px; }
+  #radio-station { font-size: 12px; font-weight: 900; color: #ffd75e; letter-spacing: 0.5px; text-align: right; }
+  #radio-track { font-size: 11px; color: #fff; text-align: right; }
+  #radio-eq { display: flex; gap: 2px; align-items: flex-end; height: 18px; }
+  #radio-eq span { width: 4px; background: #ffd75e; animation: eq 0.7s ease-in-out infinite alternate; }
+  #radio-eq span:nth-child(1) { height: 8px; animation-delay: 0s; }
+  #radio-eq span:nth-child(2) { height: 16px; animation-delay: 0.15s; }
+  #radio-eq span:nth-child(3) { height: 11px; animation-delay: 0.3s; }
+  #radio-eq span:nth-child(4) { height: 14px; animation-delay: 0.45s; }
+  @keyframes eq { from { transform: scaleY(0.5); } to { transform: scaleY(1); } }
+  #weapon-bar { top: 156px; right: 14px; display: flex; gap: 6px; z-index: 5; position: fixed; }
+  .wslot { width: 64px; background: rgba(12,10,24,0.74); border: 2px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 5px 4px 4px; text-align: center; position: relative; color: #cfc8e0; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+  .wslot svg { width: 30px; height: 22px; fill: currentColor; display: block; margin: 2px auto 1px; }
+  .wslot .wnum { position: absolute; top: 2px; left: 5px; font-size: 10px; font-weight: 800; color: #ffd75e; }
+  .wslot .wname { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+  .wslot .wammo { display: block; font-size: 11px; font-weight: 700; color: #fff; }
+  .wslot.active { border-color: #ffd75e; color: #ffd75e; box-shadow: 0 0 12px rgba(255,215,94,0.45); background: rgba(60,44,8,0.85); }
+  .wslot.locked { opacity: 0.55; }
+  .wslot.locked .wammo { color: #ff8a7a; font-size: 9px; }
+  #crew-bar { top: 226px; right: 14px; display: flex; gap: 6px; z-index: 5; position: fixed; }
+  .crew-card { width: 88px; background: rgba(12,10,24,0.74); border: 2px solid rgba(255,255,255,0.25); border-radius: 8px; padding: 5px 6px; position: relative; text-shadow: 0 1px 3px rgba(0,0,0,0.7); overflow: hidden; }
+  .crew-card .crew-key { position: absolute; top: 2px; right: 5px; font-size: 10px; font-weight: 800; color: #ffd75e; }
+  .crew-init { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #e8a800, #7a2ea6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; border: 1px solid #ffd75e; margin-bottom: 2px; }
+  .crew-name { font-size: 9px; font-weight: 900; letter-spacing: 0.5px; color: #ffd75e; white-space: nowrap; }
+  .crew-abil { font-size: 9px; font-weight: 800; white-space: nowrap; }
+  .crew-cost { font-size: 10px; font-weight: 700; color: #7ddb8a; }
+  .crew-card.ready { border-color: #7ddb8a; }
+  .crew-card.cooling { opacity: 0.6; }
+  .crew-card.cooling .crew-cost { color: #ff8a7a; }
+  .crew-card.poor .crew-cost { color: #ff8a7a; }
+  #wpd-panel { top: 132px; left: 14px; min-width: 218px; display: none; padding: 8px 12px; }
+  #wpd-head { font-size: 12px; font-weight: 900; letter-spacing: 1px; color: #ff8a7a; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px; margin-bottom: 4px; }
+  .wpd-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 2px 0; }
+  .wpd-row .u { font-weight: 800; }
+  .wpd-row .d { color: #cfc8e0; }
+  .pill { font-size: 10px; font-weight: 900; letter-spacing: 0.5px; padding: 1px 6px; border-radius: 8px; }
+  .pill.ram { background: #ff3524; } .pill.pur { background: #e8a800; color: #1a1405; } .pill.rb { background: #4d8dff; } .pill.air { background: #7a2ea6; }
+  #wpd-foot { font-size: 11px; color: #ffd75e; margin-top: 4px; }
+  #stage-bar { display: flex; gap: 3px; justify-content: center; margin-top: 5px; }
+  #stage-bar span { width: 20px; height: 5px; border-radius: 2px; background: rgba(255,255,255,0.22); }
+  #stage-bar span.done { background: #7ddb8a; }
+  #stage-bar span.active { background: #ffd75e; }
+  #mission-next { font-size: 11px; color: #cfc8e0; margin-top: 3px; letter-spacing: 0.5px; }
+  #mission-next b { color: #ffd75e; }
+  #standing-line { font-size: 11px; font-weight: 700; color: #cfc8e0; margin-top: 4px; letter-spacing: 0.5px; }
+  #standing-line span { color: #ffd75e; }
+  #standing-bar { background: #e8a800; width: 50%; }
+  #dialogue { align-items: center; gap: 12px; }
+  #dialogue-portrait { width: 46px; height: 46px; flex: none; border-radius: 8px; background: linear-gradient(135deg, #e8a800, #7a2ea6); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; border: 2px solid #ffd75e; }
+  #dialogue-who span { color: #cfc8e0; font-weight: 400; font-size: 11px; letter-spacing: 1px; }
+  #controls-footer { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #e8e2f5; background: rgba(12,10,24,0.6); padding: 5px 16px; border-radius: 12px; white-space: nowrap; z-index: 5; }
+  #watermark { position: fixed; right: 22px; top: 44%; text-align: right; z-index: 4; pointer-events: none; text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+  #watermark-name { font-size: 34px; font-weight: 900; font-style: italic; letter-spacing: 1px; }
+  #watermark-sub { font-size: 13px; color: #ffd75e; letter-spacing: 3px; text-transform: uppercase; }
+  #minimap-wrap { position: fixed; left: 16px; bottom: 16px; z-index: 5; }
+  #speedo-wrap { position: fixed; right: 16px; bottom: 16px; z-index: 5; }
+  #banner { top: 22%; left: 50%; transform: translateX(-50%); font-size: 34px; font-weight: 900; color: #ffd75e; text-shadow: 0 3px 14px rgba(0,0,0,0.7); display: none; text-align: center; background: none; border: none; white-space: nowrap; }
+  #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 6; opacity: 0; box-shadow: inset 0 0 120px 40px rgba(255, 30, 20, 0.55); }
+  .screen { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; background: rgba(8, 6, 16, 0.78); }
+  .card { background: rgba(16, 13, 30, 0.96); border: 1px solid #ffd75e; border-radius: 14px; padding: 28px 34px; max-width: 640px; width: 92vw; text-align: center; }
+  .card h1 { font-size: 44px; font-weight: 900; letter-spacing: 2px; color: #ffd75e; }
+  .card h2 { font-size: 28px; font-weight: 800; color: #ffd75e; margin-bottom: 8px; }
+  .card p { font-size: 14px; color: #d8d2e8; margin: 6px 0; line-height: 1.5; }
+  .btn { display: block; width: 100%; margin: 8px 0; padding: 11px; font-size: 15px; font-weight: 700; color: #1a1405; background: #ffd75e; border: none; border-radius: 8px; cursor: pointer; }
+  .btn:hover { background: #ffe08a; }
+  .btn:disabled { background: #6d675c; color: #cfc8e0; cursor: default; }
+  .btn.ghost { background: transparent; color: #ffd75e; border: 1px solid #ffd75e; }
+  .row { display: flex; gap: 10px; align-items: center; justify-content: space-between; text-align: left; background: rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+  .row .info { flex: 1; }
+  .row .name { font-weight: 700; font-size: 14px; }
+  .row .desc { font-size: 12px; color: #cfc8e0; }
+  .row .price { font-weight: 800; color: #7ddb8a; margin-right: 10px; }
+  .row .btn { width: auto; margin: 0; padding: 8px 16px; }
+  #screen-map .card { max-width: 1080px; display: flex; flex-direction: column; }
+  #map-body { display: flex; gap: 16px; align-items: stretch; }
+  #map-canvas { border: 2px solid #ffd75e; border-radius: 8px; background: #2f7ba3; }
+  #map-side { width: 264px; text-align: left; display: flex; flex-direction: column; }
+  #map-list { flex: 1; }
+  .map-row { display: grid; grid-template-columns: 1fr 58px; gap: 8px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.10); font-size: 13px; }
+  .map-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .map-status { text-align: right; font-weight: 800; }
+  .map-done .map-status { color: #7ddb8a; }
+  .map-active { color: #ffd75e; }
+  .map-active .map-status { color: #ffd75e; }
+  .map-todo { color: #9a93ad; }
+  #map-stats { font-size: 12px; color: #d8d2e8; margin: 10px 0; line-height: 1.6; }
+  .legend { font-size: 11px; color: #9a93ad; line-height: 1.5; margin-bottom: 10px; }
+  .keys { text-align: left; font-size: 13px; line-height: 1.9; columns: 2; margin: 10px 0; }
+  .keys b { color: #ffd75e; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div class="panel" id="district-panel">
+  <div id="district-name">WILWATIKTA</div>
+  <div id="district-sub"></div>
+  <div id="clock"></div>
+  <div id="standing-line">STANDING <span id="standing-val"></span></div>
+  <div class="bar"><div id="standing-bar"></div></div>
+</div>
+<div class="panel" id="mission-panel">
+  <div id="mission-title"></div>
+  <div id="mission-brief"></div>
+  <div id="mission-meta"><span id="mission-timer"></span><span id="mission-dist"></span></div>
+  <div id="stage-bar"></div>
+  <div id="mission-next"></div>
+</div>
+<div class="panel" id="status-panel">
+  <div id="cash">$0</div>
+  <div id="stars"></div>
+  <div id="wanted-label"></div>
+  <div class="bar"><div id="hp-bar"></div></div>
+  <div class="bar"><div id="armor-bar"></div></div>
+  <div id="rep-line"><span id="rep-level"></span> · <span id="rep-title"></span></div>
+</div>
+<div id="weapon-bar">
+  <div class="wslot" id="wslot-0"><span class="wnum">1</span><svg viewBox="0 0 24 24"><path d="M4 9h6v8H4zM14 9h6v8h-6zM5 5h4v4H5zM15 5h4v4h-4z"/></svg><span class="wname">FISTS</span><span class="wammo" id="wammo-0">∞</span></div>
+  <div class="wslot" id="wslot-1"><span class="wnum">2</span><svg viewBox="0 0 24 24"><path d="M2 5h17v4h-8l-1 8H7l1-8H2zM15 3h4v2h-4z"/></svg><span class="wname">PISTOL</span><span class="wammo" id="wammo-1">12 / 60</span></div>
+  <div class="wslot" id="wslot-2"><span class="wnum">3</span><svg viewBox="0 0 24 24"><path d="M1 7h19v3h-9l-1 7H7l1-7H4v4H1zM19 8h4v2h-4zM3 5h3v2H3z"/></svg><span class="wname">SMG</span><span class="wammo" id="wammo-2">30 / 90</span></div>
+  <div class="wslot" id="wslot-3"><span class="wnum">4</span><svg viewBox="0 0 24 24"><path d="M1 8h20v3h-8l-1 6H9l1-6H6v3H1zM8 5h4v2H8zM20 9h3v2h-3z"/></svg><span class="wname">AR-9</span><span class="wammo" id="wammo-3">LOCKED</span></div>
+</div>
+<div id="crew-bar">
+  <div class="crew-card ready" id="crew-z"><span class="crew-key">Z</span><div class="crew-init">A</div><div class="crew-name">AGUS</div><div class="crew-abil">INFO DALAM</div><div class="crew-cost" id="crew-z-cost">$100</div></div>
+  <div class="crew-card ready" id="crew-x"><span class="crew-key">X</span><div class="crew-init">B</div><div class="crew-name">BAMBANG</div><div class="crew-abil">SERVIS CEPAT</div><div class="crew-cost" id="crew-x-cost">$150</div></div>
+  <div class="crew-card ready" id="crew-c"><span class="crew-key">C</span><div class="crew-init">R</div><div class="crew-name">RATNA</div><div class="crew-abil">JALUR TIKUS</div><div class="crew-cost" id="crew-c-cost">$200</div></div>
+</div>
+<div class="panel" id="wpd-panel"><div id="wpd-head"></div><div id="wpd-rows"></div><div id="wpd-foot"></div></div>
+<div class="panel" id="dialogue"><div id="dialogue-portrait"><span id="portrait-initials"></span></div><div><div id="dialogue-who"></div><div id="dialogue-line"></div></div></div>
+<div id="dispatch"></div>
+<div class="panel" id="radio"><div><div id="radio-station"></div><div id="radio-track"></div></div><div id="radio-eq"><span></span><span></span><span></span><span></span></div></div>
+<div id="controls-footer">WASD drive / walk · E enter or exit car · SPACE shoot / handbrake · F punch · R reload · Q / 1-4 weapon · Z/X/C crew · T radio · G garage · Tab map · P pause · M mute · H horn</div>
+<div id="watermark"><div id="watermark-name"></div><div id="watermark-sub"></div></div>
+<div id="minimap-wrap"><canvas id="minimap" width="150" height="150"></canvas></div>
+<div id="speedo-wrap"><canvas id="speedo" width="130" height="130"></canvas></div>
+<div class="panel" id="banner"></div>
+<div id="vignette"></div>
+
+<div class="screen" id="screen-title"><div class="card">
+  <h1>WILWATIKTA</h1>
+  <p><b>3D open-world crime in a Javanese sunset city.</b><br>Sugeng Wibowo is back. Twelve missions, six districts, WPD chases, a police helicopter, and one last ride.</p>
+  <button class="btn" id="btn-new">NEW GAME</button>
+  <button class="btn ghost" id="btn-continue">CONTINUE (SLOT 1)</button>
+  <button class="btn ghost" id="btn-howto">HOW TO PLAY</button>
+  <button class="btn ghost" id="btn-saves">SAVE SLOTS</button>
+  <p>Drive the beachfront, steal the gold coupe, lose the helicopter.<br>Best played with a keyboard in desktop Chrome.</p>
+</div></div>
+
+<div class="screen" id="screen-pause"><div class="card">
+  <h2>PAUSED</h2>
+  <button class="btn" id="btn-resume">RESUME</button>
+  <button class="btn ghost" id="btn-pause-map">CITY MAP</button>
+  <button class="btn ghost" id="btn-pause-garage">GARAGE</button>
+  <button class="btn ghost" id="btn-pause-howto">HOW TO PLAY</button>
+  <button class="btn ghost" id="btn-pause-save">SAVE GAME</button>
+  <button class="btn ghost" id="btn-pause-title">TITLE SCREEN</button>
+</div></div>
+
+<div class="screen" id="screen-howto"><div class="card">
+  <h2>HOW TO PLAY</h2>
+  <div class="keys">
+    <div><b>WASD / Arrows</b> — drive &amp; walk</div>
+    <div><b>E</b> — enter / exit / steal car</div>
+    <div><b>Mouse click</b> — shoot (drive-by too)</div>
+    <div><b>SPACE</b> — handbrake / shoot</div>
+    <div><b>F</b> — punch</div>
+    <div><b>R</b> — reload</div>
+    <div><b>Q</b> — switch weapon</div>
+    <div><b>T</b> — radio station</div>
+    <div><b>G</b> — garage (near Bengkel Bambang)</div>
+    <div><b>Tab</b> — city map</div>
+    <div><b>P</b> — pause &nbsp; <b>M</b> — mute</div>
+    <div><b>H</b> — horn &nbsp; <b>Shift</b> — sprint</div>
+  </div>
+  <p>Follow the gold beacon to each objective. Lose wanted stars by breaking line of sight. The helicopter blocks wanted decay while it watches you.</p>
+  <button class="btn" id="btn-howto-close">CLOSE</button>
+</div></div>
+
+<div class="screen" id="screen-garage"><div class="card">
+  <h2>BENGKEL BAMBANG</h2>
+  <p>Cash: <b id="garage-cash"></b> — upgrades apply to your current car.</p>
+  <div class="row"><div class="info"><div class="name" id="up-engine-name"></div><div class="desc" id="up-engine-desc"></div></div><span class="price" id="up-engine-price"></span><button class="btn" id="up-engine">BUY</button></div>
+  <div class="row"><div class="info"><div class="name" id="up-armor-name"></div><div class="desc" id="up-armor-desc"></div></div><span class="price" id="up-armor-price"></span><button class="btn" id="up-armor">BUY</button></div>
+  <div class="row"><div class="info"><div class="name" id="up-paint-name"></div><div class="desc" id="up-paint-desc"></div></div><span class="price" id="up-paint-price"></span><button class="btn" id="up-paint">BUY</button></div>
+  <div class="row"><div class="info"><div class="name" id="up-repair-name"></div><div class="desc" id="up-repair-desc"></div></div><span class="price" id="up-repair-price"></span><button class="btn" id="up-repair">BUY</button></div>
+  <button class="btn ghost" id="btn-garage-close">CLOSE</button>
+</div></div>
+
+<div class="screen" id="screen-passed"><div class="card">
+  <h2>MISSION PASSED</h2>
+  <p><b id="passed-name"></b></p>
+  <p style="font-size:22px;color:#7ddb8a;font-weight:800" id="passed-reward"></p>
+  <button class="btn" id="btn-passed-ok">CONTINUE</button>
+</div></div>
+
+<div class="screen" id="screen-busted"><div class="card">
+  <h2>BUSTED</h2>
+  <p>The WPD caught up with Sugeng. $300 in fines. Wanto is laughing.</p>
+  <button class="btn" id="btn-busted-ok">BACK ON THE STREET</button>
+</div></div>
+
+<div class="screen" id="screen-wasted"><div class="card">
+  <h2>WASTED</h2>
+  <p>Sugeng went down. Wilwatikta keeps moving without him — for now.</p>
+  <button class="btn" id="btn-wasted-ok">GET UP</button>
+</div></div>
+
+<div class="screen" id="screen-saves"><div class="card">
+  <h2>SAVE SLOTS</h2>
+  <div class="row"><div class="info"><div class="name">Slot 1</div><div class="desc" id="slot-0-info"></div></div><button class="btn" id="slot-0-save">SAVE</button><button class="btn ghost" id="slot-0-load">LOAD</button></div>
+  <div class="row"><div class="info"><div class="name">Slot 2</div><div class="desc" id="slot-1-info"></div></div><button class="btn" id="slot-1-save">SAVE</button><button class="btn ghost" id="slot-1-load">LOAD</button></div>
+  <div class="row"><div class="info"><div class="name">Slot 3</div><div class="desc" id="slot-2-info"></div></div><button class="btn" id="slot-2-save">SAVE</button><button class="btn ghost" id="slot-2-load">LOAD</button></div>
+  <button class="btn ghost" id="btn-saves-close">CLOSE</button>
+</div></div>
+
+<div class="screen" id="screen-map"><div class="card">
+  <h2>WILWATIKTA — CITY MAP</h2>
+  <div id="map-body">
+    <canvas id="map-canvas" width="700" height="620"></canvas>
+    <div id="map-side">
+      <div id="map-list"></div>
+      <div id="map-stats"></div>
+      <div class="legend">★ marks garages, docks, markets and hideouts. The gold dashed line is your route. The white arrow is Sugeng.</div>
+      <button class="btn" id="btn-map-close">CLOSE MAP (TAB)</button>
+    </div>
+  </div>
+</div></div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
